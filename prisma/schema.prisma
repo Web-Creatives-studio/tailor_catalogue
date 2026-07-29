@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tailor {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  password     String
+  businessName String
+  slug         String     @unique
+  tagline      String?
+  bio          String?
+  phone        String
+  whatsapp     String
+  location     String?
+  logoUrl      String?
+  heroBgUrl    String?
+  categories   Category[]
+  dresses      Dress[]
+  customers    Customer[] // <-- Added back-reference to Customer
+  views        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  tailorId  String
+  tailor    Tailor   @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  dresses   Dress[]
+  createdAt DateTime @default(now())
+
+  @@unique([name, tailorId]) // Prevents duplicate category names per tailor
+}
+
+model Dress {
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  price          Float?
+  completionTime String? // e.g. "5 - 7 working days"
+  images         String[] // Array of URLs
+  categoryId     String
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tailorId       String
+  tailor         Tailor   @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  views          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Customer {
+  id           String        @id @default(cuid())
+  fullName     String
+  phone        String
+  email        String?
+  notes        String?
+  tailorId     String
+  tailor       Tailor        @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  measurements Measurement[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([phone, tailorId]) // Prevents duplicate customer phone entries per tailor
+}
+
+model Measurement {
+  id           String   @id @default(cuid())
+  categoryName String // e.g. "Senator", "Agbada", "Suit", "Shirt", "Trouser"
+  details      Json // Dynamic measurements key-value
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
