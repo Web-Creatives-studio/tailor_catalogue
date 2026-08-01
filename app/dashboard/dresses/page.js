@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { FaPen, FaMagnifyingGlass, FaTrash, FaEye, FaClock, FaTag, FaXmark } from "react-icons/fa6";
-import { FiPackage } from "react-icons/fi";
+import { FaMagnifyingGlass } from "react-icons/fa6";
+import { FiPackage, FiArrowLeft, FiLoader } from "react-icons/fi";
 import EditDress from "@/app/components/dashboard/EditDress";
 import DressTable from "@/app/components/dashboard/DressTable";
 import ShowDress from "@/app/components/dashboard/ShowDress";
@@ -35,9 +35,8 @@ function DressPageContent() {
     description: "",
     categoryId: "",
   });
-  const [savingEdit, setSavingEdit] = useState(false);
 
-  // Pure helper function to generate consistent tracking URL changes
+  // Helper function to generate consistent tracking URL changes
   const createQueryString = (name, value) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -53,6 +52,10 @@ function DressPageContent() {
   const handleUrlParamChange = (name, value) => {
     const queryString = createQueryString(name, value);
     router.push(`${pathname}?${queryString}`, { scroll: false });
+  };
+
+  const handleBackToList = () => {
+    handleUrlParamChange("dressId", "");
   };
 
   useEffect(() => {
@@ -95,11 +98,10 @@ function DressPageContent() {
     return matchesCategory && matchesSearch;
   });
 
-  // Synchronize active selected dress strictly with URL parameters identifier state
-  const selected =
-    dresses.find((d) => String(d.id) === String(urlDressId)) ||
-    filteredDresses[0] ||
-    null;
+  // Synchronize active selected dress strictly with URL parameter
+  const selected = urlDressId
+    ? dresses.find((d) => String(d.id) === String(urlDressId)) || null
+    : null;
 
   const handleSelectDress = (dress) => {
     handleUrlParamChange("dressId", dress.id);
@@ -115,8 +117,7 @@ function DressPageContent() {
         const updated = dresses.filter((d) => d.id !== id);
         setDresses(updated);
         if (selected?.id === id) {
-          const nextSelected = updated[0]?.id || "";
-          handleUrlParamChange("dressId", nextSelected);
+          handleUrlParamChange("dressId", "");
         }
       }
     } catch (err) {
@@ -138,18 +139,16 @@ function DressPageContent() {
     setEditModalOpen(true);
   };
 
-
-
   if (loading) {
     return <LoadingIndicator />;
   }
 
   return (
-    <div className="bg-slate-50 p-4 sm:p-6 font-sans flex flex-col min-h-screen">
-      <div className="max-w-7xl w-full mx-auto space-y-4 flex flex-col flex-1 min-h-0">
+    <div className="h-full flex flex-col font-sans overflow-hidden py-6">
+      <div className="max-w-7xl w-full mx-auto space-y-4 flex flex-col flex-1 min-h-0 h-full">
         
         {/* Header & Category Filters Bar */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex-shrink-0 space-y-3">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex-shrink-0 space-y-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -174,7 +173,7 @@ function DressPageContent() {
                 placeholder="Search by outfit title..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs outline-none focus:border-[#128C7E] transition-colors"
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-black placeholder:text-slate-400 outline-none focus:border-[#128C7E] transition-colors"
               />
             </div>
 
@@ -211,10 +210,17 @@ function DressPageContent() {
         </div>
 
         {/* Master-Detail Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch flex-1 min-h-0 h-full overflow-hidden">
+          
           {/* Left Table Area */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
-            <div className="overflow-y-auto flex-1">
+          {/* Mobile view: Hidden if an outfit is selected */}
+          <div
+            className={`
+              lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full min-h-0
+              ${urlDressId ? "hidden lg:flex" : "flex"}
+            `}
+          >
+            <div className="overflow-y-auto flex-1 min-h-0">
               <DressTable
                 handleDeleteDress={handleDeleteDress}
                 handleOpenEdit={handleOpenEdit}
@@ -227,7 +233,26 @@ function DressPageContent() {
           </div>
 
           {/* Right Detail Card */}
-          <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col space-y-4">
+          {/* Mobile view: Shown only if an outfit is selected */}
+          <div
+            className={`
+              lg:col-span-1 bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col h-full min-h-0 overflow-y-auto space-y-4
+              ${urlDressId ? "block" : "hidden lg:block"}
+            `}
+          >
+            {/* WhatsApp-Style Mobile Back Button */}
+            {selected && (
+              <div className="lg:hidden pb-2 border-b border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleBackToList}
+                  className="inline-flex items-center gap-2 text-xs font-bold text-[#128C7E] hover:text-[#0e6d62] transition-colors"
+                >
+                  <FiArrowLeft className="h-4 w-4" /> Back to Outfits List
+                </button>
+              </div>
+            )}
+
             {selected ? (
               <ShowDress selected={selected} handleOpenEdit={handleOpenEdit} />
             ) : (
@@ -258,11 +283,11 @@ function DressPageContent() {
   );
 }
 
-// 2. Extracted Loading UI for clean Suspense fallback usage
+// Extracted Loading UI for clean Suspense fallback usage
 function LoadingIndicator() {
   return (
-    <div className="h-[80vh] w-full flex flex-col items-center justify-center gap-3 text-slate-400 font-sans">
-      <div className="w-8 h-8 border-4 border-[#128C7E] border-t-transparent rounded-full animate-spin" />
+    <div className="h-full w-full flex flex-col items-center justify-center gap-3 text-slate-400 font-sans">
+      <FiLoader className="animate-spin text-[#128C7E]" size={28} />
       <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
         Hydrating Outfit Inventory...
       </p>
@@ -270,7 +295,7 @@ function LoadingIndicator() {
   );
 }
 
-// 🌟 3. Default Export wrapped inside Suspense to pass builds seamlessly
+// Default Export wrapped inside Suspense to pass builds seamlessly
 export default function DressPage() {
   return (
     <Suspense fallback={<LoadingIndicator />}>

@@ -8,11 +8,11 @@ datasource db {
 }
 
 model Tailor {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String      @id @default(cuid())
+  email        String      @unique
   password     String
   businessName String
-  slug         String     @unique
+  slug         String      @unique
   tagline      String?
   bio          String?
   phone        String
@@ -22,10 +22,11 @@ model Tailor {
   heroBgUrl    String?
   categories   Category[]
   dresses      Dress[]
-  customers    Customer[] // <-- Added back-reference to Customer
-  views        Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  customers    Customer[]
+  invoices     Invoice[]   // <-- Added back-reference to Invoice
+  views        Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model Category {
@@ -64,6 +65,7 @@ model Customer {
   tailorId     String
   tailor       Tailor        @relation(fields: [tailorId], references: [id], onDelete: Cascade)
   measurements Measurement[]
+  invoices     Invoice[]     // <-- Added back-reference to Invoice
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -78,4 +80,27 @@ model Measurement {
   customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  invoiceNumber String   @unique
+  docType       String   @default("INVOICE") // "INVOICE" or "RECEIPT"
+  itemTitle     String
+  category      String   @default("Senator")
+  quantity      Int      @default(1)
+  unitPrice     Float
+  totalAmount   Float
+  depositPaid   Float    @default(0)
+  balanceDue    Float    @default(0)
+  status        String   @default("UNPAID") // "PAID", "PARTIAL", "UNPAID"
+
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  tailorId      String
+  tailor        Tailor   @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

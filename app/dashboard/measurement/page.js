@@ -1,17 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { FiPlus, FiSearch, FiPhone, FiLoader } from "react-icons/fi";
+import { FiPlus, FiSearch, FiPhone, FiLoader, FiArrowLeft } from "react-icons/fi";
 import { FaRuler } from "react-icons/fa6";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import AddMeasurement from "@/app/components/dashboard/AddMeasurement";
 import EditMeasurement from "@/app/components/dashboard/EditMeasurement";
 import ShowCustomer from "@/app/components/dashboard/ShowCustomer";
 
-// Force dynamic execution for safe database/API query environments during build
 export const dynamic = "force-dynamic";
 
-// Category Measurement Templates
 const CATEGORY_FIELDS = {
   Senator: [
     "Neck",
@@ -69,25 +67,21 @@ const CATEGORY_FIELDS = {
   ],
 };
 
-// 1. Core Component carrying useSearchParams logic
 function MeasurementPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  // URL Parameters State Synchronization
   const urlCustomerId = searchParams.get("customerId") || "";
 
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // Add Modal State
   const [openModal, setOpenModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Senator");
   const [measurementValues, setMeasurementValues] = useState({});
 
-  // Edit Modal State
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editingMeasurement, setEditingMeasurement] = useState(null);
 
@@ -102,7 +96,6 @@ function MeasurementPageContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Helper function to generate consistent tracking URL changes
   const createQueryString = (name, value) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -120,7 +113,10 @@ function MeasurementPageContent() {
     router.push(`${pathname}?${queryString}`, { scroll: false });
   };
 
-  // Load Customers & Measurements
+  const handleBackToList = () => {
+    handleUrlParamChange("customerId", "");
+  };
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -140,7 +136,6 @@ function MeasurementPageContent() {
     loadMeasurements();
   }, []);
 
-  // Update measurement input fields when category switches in Add Modal
   const handleCategoryChange = (cat) => {
     setSelectedCategory(cat);
     const initial = {};
@@ -150,7 +145,6 @@ function MeasurementPageContent() {
     setMeasurementValues(initial);
   };
 
-  // Open modal for NEW measurement entry
   const handleOpenAddModal = (existingCustomer = null) => {
     if (existingCustomer) {
       setCustomerForm({
@@ -169,7 +163,6 @@ function MeasurementPageContent() {
     setOpenModal(true);
   };
 
-  // Open modal for EDITING existing measurement entry with pre-filled details
   const handleOpenEditModal = (measurement) => {
     setEditingMeasurement({
       ...measurement,
@@ -220,26 +213,30 @@ function MeasurementPageContent() {
       c.phone?.includes(search)
   );
 
-  // Synchronize active client profile strictly with URL parameter
   const selectedCustomer =
-    customers.find((c) => String(c.id) === String(urlCustomerId)) ||
-    filteredCustomers[0] ||
-    null;
+    customers.find((c) => String(c.id) === String(urlCustomerId)) || null;
 
   if (loading) {
     return <LoadingIndicator />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-8 font-sans">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <div className="h-full flex flex-col font-sans overflow-hidden py-6">
+      <div className="max-w-6xl w-full mx-auto flex flex-col flex-1 h-full min-h-0">
+        
+        {/* Layout container that takes 100% of available height */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch flex-1 min-h-0 h-full overflow-hidden">
+          
           {/* Customer Search & Sidebar List */}
-          <div className="relative bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[650px]">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4">
+          <div
+            className={`
+              relative bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full min-h-0
+              ${urlCustomerId ? "hidden lg:flex" : "flex"}
+            `}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 flex-shrink-0">
               <div>
-                <h1 className="text-2xl font-black text-slate-900">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900">
                   Client Measurements
                 </h1>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -248,7 +245,7 @@ function MeasurementPageContent() {
               </div>
             </div>
 
-            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex-shrink-0">
               <div className="relative">
                 <FiSearch className="absolute left-3.5 top-3 text-slate-400 h-4 w-4" />
                 <input
@@ -261,7 +258,7 @@ function MeasurementPageContent() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 min-h-0">
               {filteredCustomers.length === 0 ? (
                 <div className="p-8 text-center text-xs text-slate-400">
                   No clients found. Click "+" to add your first client.
@@ -306,7 +303,25 @@ function MeasurementPageContent() {
           </div>
 
           {/* Customer Detailed Records Panel */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6 min-h-[660px] border-t-4 border-t-[#128C7E]">
+          <div
+            className={`
+              lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6 h-full min-h-0 overflow-y-auto border-t-4 border-t-[#128C7E]
+              ${urlCustomerId ? "block" : "hidden lg:block"}
+            `}
+          >
+            {/* WhatsApp-Style Mobile Back Button */}
+            {selectedCustomer && (
+              <div className="lg:hidden pb-2 border-b border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleBackToList}
+                  className="inline-flex items-center gap-2 text-xs font-bold text-[#128C7E] hover:text-[#0e6d62] transition-colors"
+                >
+                  <FiArrowLeft className="h-4 w-4" /> Back to Clients List
+                </button>
+              </div>
+            )}
+
             {selectedCustomer ? (
               <ShowCustomer
                 selectedCustomer={selectedCustomer}
@@ -325,7 +340,6 @@ function MeasurementPageContent() {
         </div>
       </div>
 
-      {/* ADD NEW MEASUREMENT MODAL */}
       {openModal && (
         <AddMeasurement
           setOpenModal={setOpenModal}
@@ -343,7 +357,6 @@ function MeasurementPageContent() {
         />
       )}
 
-      {/* EDIT EXISTING MEASUREMENT MODAL */}
       {openEditModal && editingMeasurement && (
         <EditMeasurement
           measurement={editingMeasurement}
@@ -358,10 +371,9 @@ function MeasurementPageContent() {
   );
 }
 
-// 2. Extracted Loading UI for clean Suspense fallback usage
 function LoadingIndicator() {
   return (
-    <div className="h-[80vh] w-full flex flex-col items-center justify-center gap-3 text-slate-400 font-sans">
+    <div className="h-full w-full flex flex-col items-center justify-center gap-3 text-slate-400 font-sans">
       <FiLoader className="animate-spin text-[#128C7E]" size={28} />
       <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
         Loading Client Measurements...
@@ -370,7 +382,6 @@ function LoadingIndicator() {
   );
 }
 
-// 3. Default Export wrapped inside Suspense to pass builds seamlessly
 export default function MeasurementPage() {
   return (
     <Suspense fallback={<LoadingIndicator />}>
